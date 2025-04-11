@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GDOT Stream Viewer</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/hls.js/1.4.10/hls.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <h1>GDOT Traffic Camera Viewer</h1>
+    
+    <div class="controls">
+      <div class="url-control">
+        <label for="streamUrl">Stream URL:</label>
+        <input type="text" id="streamUrl" value="https://sfs-msc-pub-lq-01.navigator.dot.ga.gov:443/rtplive/ATL-CCTV-0092/playlist.m3u8">
+        <button id="loadBtn">Load</button>
+      </div>
+      
+      <div class="record-control">
+        <button id="recordBtn">Record (30s)</button>
+        <span id="recordStatus"></span>
+      </div>
+    </div>
+    
+    <div class="video-container">
+      <video id="videoPlayer" controls></video>
+    </div>
+    
+    <div id="status" class="status-box"></div>
+    
+    <div class="recordings">
+      <h2>Recordings</h2>
+      <div id="recordingsList">
+        <p>No recordings yet</p>
+      </div>
+    </div>
+  </div>
+
+  <script src="scripts/viewer.js"></script>
+  <script src="scripts/recorder.js"></script>
+</body>
+</html>

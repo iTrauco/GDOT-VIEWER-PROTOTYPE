@@ -1,0 +1,165 @@
+/* General Styles */
+body {
+    font-family: Arial, sans-serif;
+    line-height: 1.6;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    color: #333;
+  }
+  
+  .container {
+    max-width: 900px;
+    margin: 20px auto;
+    padding: 20px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+  
+  h1 {
+    text-align: center;
+    color: #005cb9;
+    margin-top: 0;
+  }
+  
+  h2 {
+    color: #333;
+    border-bottom: 1px solid #eee;
+    padding-bottom: 10px;
+  }
+  
+  /* Controls */
+  .controls {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .url-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+  
+  .url-control label {
+    min-width: 80px;
+  }
+  
+  .url-control input {
+    flex: 1;
+    min-width: 300px;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+  }
+  
+  button {
+    background-color: #005cb9;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  button:hover {
+    background-color: #004a94;
+  }
+  
+  #recordBtn {
+    background-color: #d9534f;
+  }
+  
+  #recordBtn:hover {
+    background-color: #c9302c;
+  }
+  
+  .record-control {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  #recordStatus {
+    font-size: 14px;
+    color: #555;
+  }
+  
+  /* Video */
+  .video-container {
+    background-color: #000;
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 20px;
+  }
+  
+  video {
+    width: 100%;
+    display: block;
+  }
+  
+  /* Status */
+  .status-box {
+    padding: 10px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+    font-size: 14px;
+  }
+  
+  .status-box.success {
+    background-color: #dff0d8;
+    color: #3c763d;
+    border: 1px solid #d6e9c6;
+  }
+  
+  .status-box.error {
+    background-color: #f2dede;
+    color: #a94442;
+    border: 1px solid #ebccd1;
+  }
+  
+  .status-box.info {
+    background-color: #d9edf7;
+    color: #31708f;
+    border: 1px solid #bce8f1;
+  }
+  
+  /* Recordings */
+  .recordings {
+    background-color: #f9f9f9;
+    padding: 15px;
+    border-radius: 6px;
+  }
+  
+  #recordingsList {
+    max-height: 200px;
+    overflow-y: auto;
+  }
+  
+  .recording-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid #eee;
+  }
+  
+  .recording-item:last-child {
+    border-bottom: none;
+  }
+  
+  .recording-item a {
+    color: #005cb9;
+    text-decoration: none;
+  }
+  
+  .recording-item a:hover {
+    text-decoration: underline;
+  }
