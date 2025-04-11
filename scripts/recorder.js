@@ -4,6 +4,13 @@
 const recordButton = document.getElementById('recordBtn');
 const recordStatus = document.getElementById('recordStatus');
 const recordingsList = document.getElementById('recordingsList');
+const recordingStats = document.getElementById('recordingStats');
+const resolutionStat = document.getElementById('resolutionStat');
+const fpsStat = document.getElementById('fpsStat');
+const fileSizeStat = document.getElementById('fileSizeStat');
+
+// Stats polling interval
+let statsInterval = null;
 
 // Initialize on page load
 document.addEventListener('DOMContentLoaded', function() {
@@ -28,6 +35,15 @@ function startRecording() {
   // Disable the record button while recording
   recordButton.disabled = true;
   recordStatus.textContent = "Recording... (30s)";
+  
+  // Reset and show stats display
+  resolutionStat.textContent = "-";
+  fpsStat.textContent = "-";
+  fileSizeStat.textContent = "0 B";
+  recordingStats.className = "recording-stats active";
+  
+  // Start stats polling
+  startStatsPolling();
   
   // Make AJAX request to the server to start recording
   fetch('/record', {
@@ -54,6 +70,14 @@ function startRecording() {
           recordButton.disabled = false;
           recordStatus.textContent = "Recording complete";
           
+          // Stop stats polling
+          stopStatsPolling();
+          
+          // Hide stats display after a delay
+          setTimeout(() => {
+            recordingStats.className = "recording-stats";
+          }, 3000);
+          
           // Check for new recordings
           setTimeout(() => {
             fetchRecordings();
@@ -64,6 +88,8 @@ function startRecording() {
     } else {
       recordButton.disabled = false;
       recordStatus.textContent = "Recording failed";
+      stopStatsPolling();
+      recordingStats.className = "recording-stats";
       updateStatus(`Recording failed: ${data.error}`, 'error');
     }
   })
@@ -71,8 +97,56 @@ function startRecording() {
     console.error('Error:', error);
     recordButton.disabled = false;
     recordStatus.textContent = "Recording failed";
+    stopStatsPolling();
+    recordingStats.className = "recording-stats";
     updateStatus('Error connecting to recording server', 'error');
   });
+}
+
+/**
+ * Start polling for recording stats
+ */
+function startStatsPolling() {
+  console.log("Starting stats polling...");
+  
+  // Clear any existing interval
+  if (statsInterval) {
+    clearInterval(statsInterval);
+  }
+  
+  // Poll every second
+  statsInterval = setInterval(() => {
+    console.log("Polling for stats...");
+    fetch('/recording-stats')
+      .then(response => response.json())
+      .then(data => {
+        console.log("Received stats:", data);
+        if (data.active) {
+          resolutionStat.textContent = data.resolution;
+          fpsStat.textContent = data.fps;
+          fileSizeStat.textContent = data.file_size;
+        } else {
+          // If recording is not active but we're still polling, stop
+          if (!recordButton.disabled) {
+            stopStatsPolling();
+            recordingStats.className = "recording-stats";
+          }
+        }
+      })
+      .catch(error => {
+        console.error('Error fetching stats:', error);
+      });
+  }, 1000);
+}
+
+/**
+ * Stop polling for recording stats
+ */
+function stopStatsPolling() {
+  if (statsInterval) {
+    clearInterval(statsInterval);
+    statsInterval = null;
+  }
 }
 
 /**

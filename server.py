@@ -27,10 +27,44 @@ os.makedirs(RECORDINGS_DIR, exist_ok=True)
 # Custom request handler
 class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
     
+    # Add this class variable to track recording stats
+    recording_stats = {
+        "active": False,
+        "output_file": "",
+        "resolution": "-",
+        "fps": "-",
+        "file_size": "-",
+        "start_time": 0
+    }
+    
     def do_GET(self):
         """Handle GET requests"""
+        # API endpoint to get recording stats
+        if self.path == '/recording-stats':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.send_header('Access-Control-Allow-Origin', '*')  # For CORS
+            self.end_headers()
+            
+            # Update file size if recording is active
+            if GDOTRequestHandler.recording_stats["active"] and GDOTRequestHandler.recording_stats["output_file"]:
+                if os.path.exists(GDOTRequestHandler.recording_stats["output_file"]):
+                    size_bytes = os.path.getsize(GDOTRequestHandler.recording_stats["output_file"])
+                    if size_bytes < 1024:
+                        GDOTRequestHandler.recording_stats["file_size"] = f"{size_bytes} B"
+                    elif size_bytes < 1024 * 1024:
+                        GDOTRequestHandler.recording_stats["file_size"] = f"{size_bytes/1024:.1f} KB"
+                    else:
+                        GDOTRequestHandler.recording_stats["file_size"] = f"{size_bytes/(1024*1024):.1f} MB"
+            
+            # Debug output
+            print(f"Sending recording stats: {GDOTRequestHandler.recording_stats}")
+            
+            self.wfile.write(json.dumps(GDOTRequestHandler.recording_stats).encode())
+            return
+        
         # API endpoint to get recordings list
-        if self.path == '/recordings':
+        elif self.path == '/recordings':
             self.send_response(200)
             self.send_header('Content-type', 'application/json')
             self.end_headers()
@@ -123,6 +157,14 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         output_file = os.path.join(RECORDINGS_DIR, f'gdot_stream_{timestamp}.mp4')
         
+        # Reset and update recording stats
+        GDOTRequestHandler.recording_stats["active"] = True
+        GDOTRequestHandler.recording_stats["output_file"] = output_file
+        GDOTRequestHandler.recording_stats["resolution"] = "-"
+        GDOTRequestHandler.recording_stats["fps"] = "-"
+        GDOTRequestHandler.recording_stats["file_size"] = "0 B"
+        GDOTRequestHandler.recording_stats["start_time"] = time.time()
+        
         print(f"Starting recording of {url} for {duration} seconds...")
         
         # Skip direct FFmpeg since we know it doesn't support HTTPS
@@ -137,6 +179,7 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             if not os.path.exists(playlist_file) or os.path.getsize(playlist_file) == 0:
                 print("Failed to download playlist")
+                GDOTRequestHandler.recording_stats["active"] = False
                 return
             
             # Step 2: Extract chunklist URL
@@ -144,9 +187,15 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
             with open(playlist_file, 'r') as f:
                 playlist_content = f.read()
             
+            # Extract resolution info from the playlist
+            resolution_match = re.search(r'RESOLUTION=(\d+x\d+)', playlist_content)
+            if resolution_match:
+                GDOTRequestHandler.recording_stats["resolution"] = resolution_match.group(1)
+            
             chunklist_match = re.search(r'(chunklist.*\.m3u8)', playlist_content)
             if not chunklist_match:
                 print("No chunklist found in playlist")
+                GDOTRequestHandler.recording_stats["active"] = False
                 return
             
             chunklist = chunklist_match.group(1)
@@ -158,12 +207,20 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             if not os.path.exists(chunklist_file) or os.path.getsize(chunklist_file) == 0:
                 print("Failed to download chunklist")
+                GDOTRequestHandler.recording_stats["active"] = False
                 return
             
             # Step 4: Modify chunklist to use local paths
             segment_base_url = os.path.dirname(chunklist_url)
             with open(chunklist_file, 'r') as f:
                 chunklist_content = f.read()
+
+            # Extract fps info from chunklist
+            extinf_matches = re.findall(r'#EXTINF:([\d.]+),', chunklist_content)
+            if extinf_matches and len(extinf_matches) > 1:
+                avg_segment_duration = sum(float(d) for d in extinf_matches) / len(extinf_matches)
+                estimated_fps = 30.0 / avg_segment_duration  # Rough estimate
+                GDOTRequestHandler.recording_stats["fps"] = f"{estimated_fps:.1f}"
 
             # Find all media segments
             segments = re.findall(r'media_\w+\.ts', chunklist_content)
@@ -175,7 +232,6 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
             
             # Calculate how many segments to download based on duration and EXTINF values
             # EXTINF values in the chunklist indicate segment duration
-            extinf_matches = re.findall(r'#EXTINF:([\d.]+),', chunklist_content)
             if extinf_matches:
                 avg_segment_duration = sum(float(d) for d in extinf_matches) / len(extinf_matches)
                 segments_needed = min(len(segments), int(duration / avg_segment_duration) + 2)  # +2 for safety
@@ -190,6 +246,19 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
                 local_segment = os.path.join(local_segments_dir, segment)
                 print(f"Downloading segment {i+1}/{segments_needed}: {segment}")
                 subprocess.run(['curl', '-s', segment_url, '-o', local_segment], check=True, timeout=10)
+                
+                # Update file size stat after each segment
+                if os.path.exists(local_segment):
+                    total_size = 0
+                    for seg_file in os.listdir(local_segments_dir):
+                        total_size += os.path.getsize(os.path.join(local_segments_dir, seg_file))
+                    
+                    if total_size < 1024:
+                        GDOTRequestHandler.recording_stats["file_size"] = f"{total_size} B"
+                    elif total_size < 1024 * 1024:
+                        GDOTRequestHandler.recording_stats["file_size"] = f"{total_size/1024:.1f} KB"
+                    else:
+                        GDOTRequestHandler.recording_stats["file_size"] = f"{total_size/(1024*1024):.1f} MB"
 
             # Create a local chunklist with only the segments we downloaded
             local_chunklist = chunklist_content
@@ -227,6 +296,9 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
             # Clean up temporary directory
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
+            
+            # Reset recording stats
+            GDOTRequestHandler.recording_stats["active"] = False
     
     def _format_recording_name(self, filename):
         """Format a readable name from filename"""
