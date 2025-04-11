@@ -1,5 +1,3 @@
-print("Starting server...")
-
 #!/usr/bin/env python3
 """
 Simple HTTP server for GDOT Stream Viewer with recording capabilities
@@ -12,12 +10,16 @@ import json
 import subprocess
 import threading
 import time
+import re
+import shutil
 from datetime import datetime
 from urllib.parse import parse_qs, urlparse
 
 # Configuration
 PORT = 8000
 RECORDINGS_DIR = "recordings"
+
+print("Starting server...")
 
 # Make sure recordings directory exists
 os.makedirs(RECORDINGS_DIR, exist_ok=True)
@@ -117,34 +119,14 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
         self.send_error(404, 'Endpoint not found')
     
     def _record_stream(self, url, duration):
-        """Record the stream using ffmpeg or curl+ffmpeg"""
+        """Record the stream using curl+ffmpeg method"""
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         output_file = os.path.join(RECORDINGS_DIR, f'gdot_stream_{timestamp}.mp4')
         
         print(f"Starting recording of {url} for {duration} seconds...")
         
-        # Try direct FFmpeg first
-        try:
-            result = subprocess.run([
-                'ffmpeg',
-                '-y',                 # Overwrite output files
-                '-i', url,            # Input URL
-                '-t', str(duration),  # Duration in seconds
-                '-c', 'copy',         # Copy streams without re-encoding
-                '-bsf:a', 'aac_adtstoasc',  # Fix for HLS streams
-                output_file
-            ], capture_output=True, text=True, timeout=duration+10)
-            
-            if result.returncode == 0 and os.path.exists(output_file) and os.path.getsize(output_file) > 10000:
-                print(f"Successfully recorded to {output_file}")
-                return
-            
-            print(f"FFmpeg direct method failed with code {result.returncode}")
-            # If this fails, try the curl+ffmpeg method
-        except (subprocess.SubprocessError, subprocess.TimeoutExpired) as e:
-            print(f"FFmpeg direct method failed: {e}")
-        
-        # Curl + FFmpeg method
+        # Skip direct FFmpeg since we know it doesn't support HTTPS
+        # Use curl+FFmpeg method directly
         temp_dir = os.path.join(RECORDINGS_DIR, f'temp_{timestamp}')
         os.makedirs(temp_dir, exist_ok=True)
         
@@ -162,7 +144,6 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
             with open(playlist_file, 'r') as f:
                 playlist_content = f.read()
             
-            import re
             chunklist_match = re.search(r'(chunklist.*\.m3u8)', playlist_content)
             if not chunklist_match:
                 print("No chunklist found in playlist")
@@ -179,41 +160,60 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
                 print("Failed to download chunklist")
                 return
             
-            # Step 4: Modify chunklist to use absolute URLs
+            # Step 4: Modify chunklist to use local paths
             segment_base_url = os.path.dirname(chunklist_url)
             with open(chunklist_file, 'r') as f:
                 chunklist_content = f.read()
 
             # Find all media segments
-            import re
             segments = re.findall(r'media_\w+\.ts', chunklist_content)
             print(f"Found {len(segments)} media segments")
 
             # Download each segment
             local_segments_dir = os.path.join(temp_dir, 'segments')
             os.makedirs(local_segments_dir, exist_ok=True)
-            for i, segment in enumerate(segments[:100]):  # Limit to 100 segments max
+            
+            # Calculate how many segments to download based on duration and EXTINF values
+            # EXTINF values in the chunklist indicate segment duration
+            extinf_matches = re.findall(r'#EXTINF:([\d.]+),', chunklist_content)
+            if extinf_matches:
+                avg_segment_duration = sum(float(d) for d in extinf_matches) / len(extinf_matches)
+                segments_needed = min(len(segments), int(duration / avg_segment_duration) + 2)  # +2 for safety
+            else:
+                segments_needed = min(len(segments), 30)  # Reasonable default
+                
+            print(f"Downloading {segments_needed} segments for {duration}s recording")
+            
+            # Download only the segments we need
+            for i, segment in enumerate(segments[:segments_needed]):
                 segment_url = f"{segment_base_url}/{segment}"
                 local_segment = os.path.join(local_segments_dir, segment)
-                print(f"Downloading segment {i+1}/{len(segments)}: {segment}")
+                print(f"Downloading segment {i+1}/{segments_needed}: {segment}")
                 subprocess.run(['curl', '-s', segment_url, '-o', local_segment], check=True, timeout=10)
 
-            # Modify chunklist to use local paths
-            modified_content = re.sub(r'media_(\w+\.ts)', f'segments/media_\\1', chunklist_content, flags=re.MULTILINE)
-
-            with open(chunklist_file, 'w') as f:
-                f.write(modified_content)
+            # Create a local chunklist with only the segments we downloaded
+            local_chunklist = chunklist_content
+            for segment in segments[segments_needed:]:
+                # Remove segments we didn't download from the chunklist
+                local_chunklist = local_chunklist.replace(segment, '')
+                
+            # Update segment paths to local
+            local_chunklist = re.sub(r'(media_\w+\.ts)', r'segments/\1', local_chunklist)
             
-            # Step 5: Use FFmpeg to download segments
+            # Write updated chunklist
+            with open(chunklist_file, 'w') as f:
+                f.write(local_chunklist)
+            
+            # Step 5: Use FFmpeg to combine segments into MP4
             subprocess.run([
                 'ffmpeg',
                 '-y',
-                '-protocol_whitelist', 'file,http,https,tcp,tls',
+                '-protocol_whitelist', 'file',
                 '-i', chunklist_file,
-                '-t', str(duration),
                 '-c', 'copy',
+                '-movflags', '+faststart',
                 output_file
-            ], check=True, timeout=duration+10)
+            ], check=True, timeout=duration+20)
             
             if os.path.exists(output_file) and os.path.getsize(output_file) > 10000:
                 print(f"Successfully recorded to {output_file} using curl+ffmpeg method")
@@ -225,7 +225,6 @@ class GDOTRequestHandler(http.server.SimpleHTTPRequestHandler):
         
         finally:
             # Clean up temporary directory
-            import shutil
             if os.path.exists(temp_dir):
                 shutil.rmtree(temp_dir)
     
