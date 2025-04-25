@@ -1,0 +1,104 @@
+<svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="800" height="500" fill="#f8f9fa" rx="10" ry="10"/>
+  
+  <!-- Title -->
+  <text x="400" y="40" font-family="Arial" font-size="24" font-weight="bold" text-anchor="middle">Traffic Analysis System Architecture</text>
+  
+  <!-- Data Source Box -->
+  <rect x="50" y="80" width="160" height="120" fill="#e1f5fe" stroke="#0288d1" stroke-width="2" rx="5" ry="5"/>
+  <text x="130" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Data Sources</text>
+  <rect x="70" y="120" width="120" height="25" fill="#b3e5fc" rx="3" ry="3"/>
+  <text x="130" y="137" font-family="Arial" font-size="12" text-anchor="middle">GDOT Live Streams</text>
+  <rect x="70" y="155" width="120" height="25" fill="#b3e5fc" rx="3" ry="3"/>
+  <text x="130" y="172" font-family="Arial" font-size="12" text-anchor="middle">Recorded Videos</text>
+  
+  <!-- Processing Pipeline -->
+  <rect x="270" y="80" width="160" height="330" fill="#e8f5e9" stroke="#388e3c" stroke-width="2" rx="5" ry="5"/>
+  <text x="350" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Processing Pipeline</text>
+  
+  <!-- Pipeline Stages -->
+  <rect x="290" y="130" width="120" height="40" fill="#c8e6c9" rx="3" ry="3"/>
+  <text x="350" y="155" font-family="Arial" font-size="12" text-anchor="middle">Frame Extraction</text>
+  
+  <rect x="290" y="190" width="120" height="40" fill="#c8e6c9" rx="3" ry="3"/>
+  <text x="350" y="215" font-family="Arial" font-size="12" text-anchor="middle">Object Detection</text>
+  <text x="350" y="230" font-family="Arial" font-size="10" text-anchor="middle">YOLOv8 + CUDA</text>
+  
+  <rect x="290" y="250" width="120" height="40" fill="#c8e6c9" rx="3" ry="3"/>
+  <text x="350" y="275" font-family="Arial" font-size="12" text-anchor="middle">Object Tracking</text>
+  <text x="350" y="290" font-family="Arial" font-size="10" text-anchor="middle">ByteTrack</text>
+  
+  <rect x="290" y="310" width="120" height="40" fill="#c8e6c9" rx="3" ry="3"/>
+  <text x="350" y="335" font-family="Arial" font-size="12" text-anchor="middle">Analysis</text>
+  <text x="350" y="350" font-family="Arial" font-size="10" text-anchor="middle">Counting, Speed</text>
+  
+  <rect x="290" y="370" width="120" height="40" fill="#c8e6c9" rx="3" ry="3"/>
+  <text x="350" y="395" font-family="Arial" font-size="12" text-anchor="middle">Visualization</text>
+  
+  <!-- Hardware Layer -->
+  <rect x="270" y="430" width="160" height="50" fill="#fff3e0" stroke="#ff9800" stroke-width="2" rx="5" ry="5"/>
+  <text x="350" y="455" font-family="Arial" font-size="12" font-weight="bold" text-anchor="middle">Hardware</text>
+  <text x="350" y="470" font-family="Arial" font-size="10" text-anchor="middle">RTX A5000 GPU + CUDA</text>
+  
+  <!-- Results & Storage -->
+  <rect x="490" y="80" width="260" height="160" fill="#f3e5f5" stroke="#7b1fa2" stroke-width="2" rx="5" ry="5"/>
+  <text x="620" y="110" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Results & Storage</text>
+  
+  <rect x="510" y="130" width="100" height="40" fill="#e1bee7" rx="3" ry="3"/>
+  <text x="560" y="155" font-family="Arial" font-size="12" text-anchor="middle">Processed</text>
+  <text x="560" y="170" font-family="Arial" font-size="12" text-anchor="middle">Videos</text>
+  
+  <rect x="630" y="130" width="100" height="40" fill="#e1bee7" rx="3" ry="3"/>
+  <text x="680" y="155" font-family="Arial" font-size="12" text-anchor="middle">Analytics</text>
+  <text x="680" y="170" font-family="Arial" font-size="12" text-anchor="middle">Database</text>
+  
+  <rect x="510" y="180" width="220" height="40" fill="#e1bee7" rx="3" ry="3"/>
+  <text x="620" y="205" font-family="Arial" font-size="12" text-anchor="middle">Traffic Reports & Visualizations</text>
+  
+  <!-- Training & Fine-tuning -->
+  <rect x="490" y="260" width="260" height="150" fill="#ffebee" stroke="#c62828" stroke-width="2" rx="5" ry="5"/>
+  <text x="620" y="290" font-family="Arial" font-size="16" font-weight="bold" text-anchor="middle">Model Training (Post Day-One)</text>
+  
+  <rect x="510" y="310" width="100" height="40" fill="#ffcdd2" rx="3" ry="3"/>
+  <text x="560" y="335" font-family="Arial" font-size="12" text-anchor="middle">Data</text>
+  <text x="560" y="350" font-family="Arial" font-size="12" text-anchor="middle">Collection</text>
+  
+  <rect x="630" y="310" width="100" height="40" fill="#ffcdd2" rx="3" ry="3"/>
+  <text x="680" y="335" font-family="Arial" font-size="12" text-anchor="middle">Transfer</text>
+  <text x="680" y="350" font-family="Arial" font-size="12" text-anchor="middle">Learning</text>
+  
+  <rect x="570" y="360" width="100" height="40" fill="#ffcdd2" rx="3" ry="3"/>
+  <text x="620" y="385" font-family="Arial" font-size="12" text-anchor="middle">Optimized</text>
+  <text x="620" y="400" font-family="Arial" font-size="12" text-anchor="middle">Model</text>
+  
+  <!-- Connection Lines -->
+  <!-- Data Source to Pipeline -->
+  <line x1="210" y1="140" x2="270" y2="140" stroke="#666" stroke-width="2"/>
+  <polygon points="268,135 278,140 268,145" fill="#666"/>
+  
+  <!-- Pipeline to Results -->
+  <line x1="430" y1="180" x2="490" y2="180" stroke="#666" stroke-width="2"/>
+  <polygon points="488,175 498,180 488,185" fill="#666"/>
+  
+  <!-- Results to Training -->
+  <line x1="620" y1="240" x2="620" y2="260" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+  <polygon points="615,258 620,268 625,258" fill="#666"/>
+  
+  <!-- Training back to Pipeline -->
+  <line x1="550" y1="380" x2="350" y2="380" stroke="#666" stroke-width="2" stroke-dasharray="5,5"/>
+  <polygon points="352,375 342,380 352,385" fill="#666"/>
+  
+  <!-- Data Flow Labels -->
+  <text x="240" y="130" font-family="Arial" font-size="10" text-anchor="middle">Video</text>
+  <text x="240" y="145" font-family="Arial" font-size="10" text-anchor="middle">Streams</text>
+  
+  <text x="460" y="170" font-family="Arial" font-size="10" text-anchor="middle">Detection</text>
+  <text x="460" y="185" font-family="Arial" font-size="10" text-anchor="middle">Results</text>
+  
+  <text x="580" y="245" font-family="Arial" font-size="10" text-anchor="middle">Training</text>
+  <text x="580" y="260" font-family="Arial" font-size="10" text-anchor="middle">Data</text>
+  
+  <text x="450" y="365" font-family="Arial" font-size="10" text-anchor="middle">Fine-tuned</text>
+  <text x="450" y="380" font-family="Arial" font-size="10" text-anchor="middle">Model</text>
+</svg>
